@@ -1,4 +1,4 @@
-
+coinsert 'pjoin'
 require 'tables/csv'
 
 A=: fixcsv noun define
@@ -78,6 +78,36 @@ Id,Name,Age,Sex,Job,Status,Bank,Kids
 5,Frieda,9,F,student,Single,,
 )
 
+AN=: 0 ". ];._2 noun define
+3  0.038 56
+8  0.335  6
+6  0.058 48
+4  0.691 96
+5  0.770 59
+1  0.416 72
+7  0.246  1
+)
+
+BN=: 0 ". ];._2 noun define
+2  0.033  6 908
+6  0.985 35 148
+7  0.619 46  76
+4  0.001 33 672
+)
+
+Inner_ANBN=: 0 ". ];._2 noun define
+6 0.058 48 0.985 35 148
+4 0.691 96 0.001 33 672
+7 0.246  1 0.619 46  76
+)
+
+Right_ANBN=: 0 ". ];._2 noun define
+2 _9999 _9999 0.033  6 908
+6 0.058    48 0.985 35 148
+7 0.246     1 0.619 46  76
+4 0.691    96 0.001 33 672
+)
+
 test=: verb define
   assert. LeftAB -: left join A;<B
   assert. RightAB -: right join A;<B
@@ -85,6 +115,8 @@ test=: verb define
   assert. OuterAB -: outer join A;<B 
   assert. LeftBA -: left join B;<A
   assert. LeftABC -: 'Id' left join A;B;<C
+  assert. Inner_ANBN -: inner join1st AN;<BN
+  assert. Right_ANBN -: 0 right join1st AN;<BN
   'All tests pass!'
 )
 
@@ -98,13 +130,6 @@ Note 'example usage'
 outer join A;B;<C
 )
 
-Note 'example usage'
-A 'Id' merge left B
-A ('Id';'Name') merge left B
-A ('Id';'Name') merge right B
-A 'Id' merge outer B
-)
-
 Note 'simple merge no header'
 a=:(<"0 i. 4),.(<'x')
 b=:_2]\(1;'a';2;'b';10;'c')
@@ -112,26 +137,5 @@ c=:_3]\0;'x';'';1;'x';'a';2;'x';'b';3;'x';''
 
 leftJoin=: [ ,. i.~&:({."1) { a: ,~ }."1@]
 
-
 c-: (a leftJoin b)
-1
-
-NB. Ric Sherlock's implementation from yesterday [1]
-joinLeft=: [ , ] #~ e.~&:({."1)
-summary=: (~.@:({."1) ,. {."1 ]/. {:"1)
-
-c-: (a summary at joinLeft b)
-1
-
-a=:(<"0 i. 1e6),.(<'x')
-b=:_2]\(999997;1;999999;2)
-
-timespacex 'c1=:a summary at joinLeft b'
-1.28482 1.16477e8
-
-timespacex 'c2=:a leftJoin b'
-0.627465 6.65212e7
-
-
-c1 -: c2
 )
