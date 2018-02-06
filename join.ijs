@@ -9,28 +9,28 @@ right=: left~         NB. items of x and y that occur in y
 inner=: union ([ #~ e.) intersect  NB. items of x and y that occur in both x and y
 outer=: union         NB. items of x and y that occur in either x or y
 
-NB.*join a Join tables on key columns using join strategy
+NB.*join a Join tables y on key columns x using join strategy u
 NB. eg: (<'Id') left join A;<B
 NB. form: x u join y
 NB. x is: list of of key labels (optional, default is first field)
 NB. y is: list of boxed tables to merge
-NB. u is: verb strategy for joining table indicies. One of left, right, inner, outer
+NB. u is: verb strategy for joining table indicies (left, right, inner, outer)
 join=: adverb define
   key=. {.{. >@{. y                                     NB. default key is first field
   key u join y
 :
   key=. boxopen x
   if. (right`'') = (u`'') do.  NB. handle when left & right have non-key fields in common
-    mhdr=. key , key -.~ ~. &.|. ; {.&.> y                  NB. header in merged
+    jhdr=. key , key -.~ ~. &.|. ; {.&.> y                  NB. header in joined
     cidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y  NB. add uniq cols progressively from left
   else.
-    mhdr=. key , key -.~ ~. ; {.&.> y                       NB. header in merged
+    jhdr=. key , key -.~ ~. ; {.&.> y                       NB. header in joined
     cidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y      NB. add uniq cols progressively from left
   end.
-  mkey=. ~.; u&.>/ ((key i.~ {.) {"1 }.)&.> y               NB. key cols in merged
-  ridx=. (mkey i.~ }. {"1~ key i.~ {.)&.> y
-  mdat=. ;,.&.>/ (ridx <@;&.> cidx) ([ { a: ,~ }.@]) &.> y
-  mhdr , mkey ,. mdat
+  jkey=. ~.; u&.>/ ((key i.~ {.) {"1 }.)&.> y               NB. key cols in joined
+  ridx=. (jkey i.~ }. {"1~ key i.~ {.)&.> y
+  jdat=. ;,.&.>/ (ridx <@;&.> cidx) ([ { a: ,~ }.@]) &.> y  NB. data cols in joined
+  jhdr , jkey ,. jdat
 )
 
 Note 'example usage'
