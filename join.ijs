@@ -69,61 +69,42 @@ join=: adverb define
 
 NB.*join a Join tables y on key columns x using join strategy m
 NB. ugly but correct rewrite
-join=: {{)a
+join=: adverb define
   key=. {.{. >@{. y                                     NB. default key is first field
   key m join y
 :
   key=. boxopen x
+  if. 'right' -: m do.  NB. handle when left & right have non-key fields in common
+    jhdr=. key , key -.~ ~. &.|. ; {.&.> y               NB. header for joined tables
+    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from right
+  else.
+    jhdr=. key , key -.~ ~. ; {.&.> y                    NB. header for joined tables
+    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from left
+  end.
+
+  k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
+  keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
+
   select. m
   case. 'inner' do.
-    k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from left
-    keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
     k2k=. ; intersect&.>/ keys                           NB. key values to keep in result (depends on join type)
-    ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
-    jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
-    jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from keys 2 keep
-    rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys  NB. get row indices in merge order required from each table
-    jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
-    jhdr=. key , key -.~ ~. ; {.&.> y                    NB. header for joined tables
   case. 'left' do.
-    k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from left
-    keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
     k2k=. ; [&.>/ keys                                   NB. key values to keep in result (depends on join type)
-    ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
-    jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
-    jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from left table
-    rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys  NB. get row indices in merge order required from each table
-    jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
-    jhdr=. key , key -.~ ~. ; {.&.> y                    NB. header for joined tables
   case. 'right' do.
-    k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from right
-    keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
     k2k=. ; ]&.>/ keys                                   NB. key values to keep in result (depends on join type)
-    ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
-    jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
-    jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from left table
-    rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys  NB. get row indices in merge order required from each table
-    jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
-    jhdr=. key , key -.~ ~. &.|. ; {.&.> y               NB. header for joined tables
   case. 'outer' do.
-    k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from left
-    keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
     k2k=. ; ,&.>/ keys                                   NB. key values to keep in result (depends on join type)
-    ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
-    jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
-    jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from keys 2 keep
-    rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys  NB. get row indices in merge order required from each table
-    jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
-    jhdr=. key , key -.~ ~. ; {.&.> y                    NB. header for joined tables
   case. do.
     echo 'Bad option `m`: ',m
   end.
+
+  ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
+  jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
+  jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from keys 2 keep
+  rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys  NB. get row indices in merge order required from each table
+  jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
   jhdr , (;jkey) ,. jdat
-}}
+)
 
 Note 'example usage'
 'Id' left join A;<B
