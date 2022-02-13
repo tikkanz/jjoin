@@ -1,0 +1,6 @@
+NB. project: ~Dev/jjoin
+NB.
+NB. defines list of source files.
+NB. path defaults to project directory
+
+join.ijs
