@@ -1,26 +1,26 @@
 NB.=========================================================
-NB. Joining/Merging tables
+NB. Join/Merge tables
 
 require 'tables/csv'
 cocurrent 'pjoin'
 
 NB. Set operations on lists
-intersect=: [ -. -.   NB. items common to both x and y (in order of left appearence)
+intersect=: [ -. -.       NB. items common to both x and y (in order of left appearence)
 intersectright=: ] -. -.~ NB. items common to both x and y (in order of right appearence)
-leftonly=: -. -. ]    NB. items that occur only in x
-rightonly=: -. -. [   NB. items that occur only in y
-union=: ,             NB. items from both x and y
+leftonly=: -. -. ]        NB. items that occur only in x
+rightonly=: -. -. [       NB. items that occur only in y
+union=: ,                 NB. items from both x and y
 
 left=: [
 right=: ]
-inner=: intersect f.  NB. items of x and y that occur in both x and y
-outer=: union f.      NB. items of x and y that occur in either x or y
-
-isnumeric=: 3!:0 e. 1 4 8 16 64 128"_
-hasDups=: -.@(-: ~.)               NB. contains duplicate items
+inner=: intersect f.      NB. items of x and y that occur in both x and y
+outer=: union f.          NB. items of x and y that occur in either x or y
 
 oc=: i.~ (] - {) /:@/:             NB. occurrence count
 pi=: #@[ ({. i.&(,.oc) }.) [ i. ,  NB. progressive index of
+
+hasDups=: -.@(-: ~.)               NB. contains duplicate items
+isnumeric=: 3!:0 e. 1 4 8 16 64 128"_
 
 isNumericField=: monad define
   if. isnumeric y do. return. 1 end.
@@ -38,26 +38,23 @@ NB. u is: verb strategy for joining table indicies (left, right, inner, outer)
 NB. eg: left join A;<B
 NB. eg: 'Id' left join A;<B
 join=: adverb define
-  key=. {.{. >@{. y                                     NB. default key is first field
+  key=. {.{. 0{:: y                                        NB. default join key is first field of first table
   key u join y
 :
   key=. boxopen x
-  if. (right`'') = (u`'') do.  NB. handle when left & right have non-key fields in common
-    jhdr=. key , key -.~ ~. &.|. ; {.&.> y               NB. header for joined tables
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from right
-  else.
-    jhdr=. key , key -.~ ~. ; {.&.> y                    NB. header for joined tables
-    colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from left
-  end.
-
-  k_colidx=. (key i.~ {.)&.> y                           NB. indexes of key column(s) in each table
-  keys=. k_colidx ({"1 }.)&.> y                          NB. boxed key columns for each table
-  k2k=. ; u&.>/ keys                                     NB. key values to keep in result (depends on join type)
-  ks2k=. k2k&(] #~ e.~)&.> keys                          NB. keys to keep for each table
-  jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                  NB. choose keys from "many" table (if there is one) as the target set
-  jkey=. k2k <@(] , -.) ; jkey                           NB. ensure that jkey contains all keys from keys 2 keep
-  rowidx=. (jkey (i.~)`(pi~)@.(hasDups@])&.>/ ]) keys    NB. get row indices in merge order required from each table
-  jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@]) &.> y  NB. build results data using required rows/columns from each table
+  isright=. right {{u`'' = v`''}}                          NB. checks if u is the verb right
+  getColIdx=. ] i.&.> [: }. [: -.~&.>/\ key ; ]            NB. consolidates indicies of uniq (non-key) cols in each table progressively from left
+  
+  jhdr=. key ([ , -.~) ~.`(~.&.|.)@.(u isright) ; {.&.> y  NB. header for joined tables
+  colidx=. getColIdx`(getColIdx&.|.)@.(u isright) {.&.> y  NB. consolidated non-key column indices from left or right
+  k_colidx=. (key i.~ {.)&.> y                             NB. indexes of key column(s) in each table
+  keys=. k_colidx ({"1 }.)&.> y                            NB. key columns for each table
+  k2k=. ; u&.>/ keys                                       NB. key values to keep in result
+  ks2k=. k2k&(] #~ e.~)&.> keys                            NB. keys to keep for each table
+  jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                    NB. target keys from "many" table (if there is one)
+  jkey=. k2k <@(] , -.) ; jkey                             NB. ensure that jkey contains all keys from keys 2 keep
+  rowidx=. jkey (i.~)`(pi~)@.(hasDups@])&.>/ keys          NB. get row indices in merge order required from each table
+  jdat=. ;,.&.>/ (rowidx <@;&.> colidx) ([ { a: ,~ }.@])&.> y  NB. build results data using required rows/columns from each table
   jhdr , (;jkey) ,. jdat
 )
 
