@@ -7,16 +7,14 @@ cocurrent 'pjoin'
 NB. Set operations on lists
 intersect=: [ -. -.   NB. items common to both x and y (in order of left appearence)
 intersectright=: ] -. -.~ NB. items common to both x and y (in order of right appearence)
-union=: ,             NB. items from both x and y
-NB. left=: leftonly ,~ [ #~ e.        NB. items of x and y that occur in x
-NB. right=: left~         NB. items of x and y that occur in y
-left=: [
-right=: ]
-inner=: intersect  NB. items of x and y that occur in both x and y
-outer=: union         NB. items of x and y that occur in either x or y
-outer=: (] {~ [: <@<@< #@] -.~ i.~) ,~ left
 leftonly=: -. -. ]    NB. items that occur only in x
 rightonly=: -. -. [   NB. items that occur only in y
+union=: ,             NB. items from both x and y
+
+left=: [
+right=: ]
+inner=: intersect f.  NB. items of x and y that occur in both x and y
+outer=: union f.      NB. items of x and y that occur in either x or y
 
 isnumeric=: 3!:0 e. 1 4 8 16 64 128"_
 hasDups=: -.@(-: ~.)               NB. contains duplicate items
@@ -31,18 +29,6 @@ isNumericField=: monad define
   end.
 )
 
-left=: 'left'
-right=: 'right'
-outer=: 'outer'
-inner=: 'inner'
-
-Note 'plan'
-Build an ugly but hopefully correct implementation to start from.
-Use select case to model the different join opitions independently to start with.
-Once correct with good tests, then look to find similarities and refactor.
-Do I need to check/specify table relationship (1-to-1 vs 1-to-many) and change merge behaviour accordingly?
-)
-
 NB.*join a Join tables y on key columns x using join strategy u
 NB. eg: (<'Id') left join A;<B
 NB. form: x u join y
@@ -55,26 +41,6 @@ join=: adverb define
 :
   key=. boxopen x
   if. (right`'') = (u`'') do.  NB. handle when left & right have non-key fields in common
-    jhdr=. key , key -.~ ~. &.|. ; {.&.> y                  NB. header in joined
-    cidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y  NB. add uniq cols progressively from left
-  else.
-    jhdr=. key , key -.~ ~. ; {.&.> y                       NB. header in joined
-    cidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ]) {.&.> y      NB. add uniq cols progressively from left
-  end.
-  jkey=. ~.; u&.>/ ((key i.~ {.) {"1 }.)&.> y               NB. key cols in joined
-  ridx=. (jkey i.~ }. {"1~ key i.~ {.)&.> y
-  jdat=. ;,.&.>/ (ridx <@;&.> cidx) ([ { a: ,~ }.@]) &.> y  NB. data cols in joined
-  jhdr , jkey ,. jdat
-)
-
-NB.*join a Join tables y on key columns x using join strategy m
-NB. ugly but correct rewrite
-join=: adverb define
-  key=. {.{. >@{. y                                     NB. default key is first field
-  key m join y
-:
-  key=. boxopen x
-  if. 'right' -: m do.  NB. handle when left & right have non-key fields in common
     jhdr=. key , key -.~ ~. &.|. ; {.&.> y               NB. header for joined tables
     colidx=. (] i.&.> [: }. [: -.~&.>/\ key ; ])&.|. {.&.> y NB. consolidate indicies of uniq (non-key) cols in each table progressively from right
   else.
@@ -84,20 +50,7 @@ join=: adverb define
 
   k_colidx=. (key i.~ {.)&.> y                         NB. indexes of key column(s) in each table
   keys=. k_colidx ({"1 }.)&.> y                        NB. boxed key columns for each table
-
-  select. m
-  case. 'inner' do.
-    k2k=. ; intersect&.>/ keys                           NB. key values to keep in result (depends on join type)
-  case. 'left' do.
-    k2k=. ; [&.>/ keys                                   NB. key values to keep in result (depends on join type)
-  case. 'right' do.
-    k2k=. ; ]&.>/ keys                                   NB. key values to keep in result (depends on join type)
-  case. 'outer' do.
-    k2k=. ; ,&.>/ keys                                   NB. key values to keep in result (depends on join type)
-  case. do.
-    echo 'Bad option `m`: ',m
-  end.
-
+  k2k=. ; u&.>/ keys                                   NB. key values to keep in result (depends on join type)
   ks2k=. k2k&(] #~ e.~)&.> keys                        NB. keys to keep for each table
   jkey=. {. ({. ,~ ] #~ hasDups&>) ks2k                NB. choose keys from "many" table (if there is one) as the target set
   jkey=. k2k <@(] , -.) ; jkey                         NB. ensure that jkey contains all keys from keys 2 keep

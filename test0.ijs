@@ -192,8 +192,8 @@ test=: verb define
   assert. InnerPV -: inner join patients ;< visits
   assert. OuterPV -: outer join patients ;< visits
   assert. RightPV -:&sortTable right join patients ;< visits
-  NB. assert. Inner_ANBN -: inner join1st AN;<BN
-  NB. assert. Right_ANBN -: 0 right join1st AN;<BN
+  assert. Inner_ANBN -: inner join1st AN;<BN
+  assert. Right_ANBN -: 0 right join1st AN;<BN
   'All tests pass!'
 )
 
