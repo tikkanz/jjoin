@@ -27,6 +27,27 @@ Id,Bank,Name,Kids
 7,,Ben,0
 )
 
+patients=: fixcsv {{)n
+PATIENTID,LASTNAME
+1001,Hopper
+4004,Wirth
+3003,Kemeny
+2002,Gosling
+5005,Kurtz
+}}
+ 
+visits=: fixcsv {{)n
+PATIENTID,VISIT_DATE,SCORE
+2002,2020-09-10,6.8
+1001,2020-09-17,5.5
+4004,2020-09-24,8.4
+2002,2020-10-08,
+1001,,6.6
+3003,2020-11-12,
+4004,2020-11-05,7.0
+1001,2020-11-19,5.3
+}}
+
 LeftAB=: fixcsv noun define
 Id,Name,Age,Sex,Job,Status
 1,Alex,40,M,Waiter,Separated
@@ -78,6 +99,56 @@ Id,Name,Age,Sex,Job,Status,Bank,Kids
 5,Frieda,9,F,student,Single,,
 )
 
+LeftPV=: fixcsv noun define
+PATIENTID,LASTNAME,VISIT_DATE,SCORE
+2002,Gosling,2020-09-10,6.8
+1001,Hopper,2020-09-17,5.5
+4004,Wirth,2020-09-24,8.4
+2002,Gosling,2020-10-08,
+1001,Hopper,,6.6
+3003,Kemeny,2020-11-12,
+4004,Wirth,2020-11-05,7.0
+1001,Hopper,2020-11-19,5.3
+5005,Kurtz,,
+)
+
+InnerPV=: fixcsv noun define
+PATIENTID,LASTNAME,VISIT_DATE,SCORE
+2002,Gosling,2020-09-10,6.8
+1001,Hopper,2020-09-17,5.5
+4004,Wirth,2020-09-24,8.4
+2002,Gosling,2020-10-08,
+1001,Hopper,,6.6
+3003,Kemeny,2020-11-12,
+4004,Wirth,2020-11-05,7.0
+1001,Hopper,2020-11-19,5.3
+)
+
+OuterPV=: fixcsv noun define
+PATIENTID,LASTNAME,VISIT_DATE,SCORE
+2002,Gosling,2020-09-10,6.8
+1001,Hopper,2020-09-17,5.5
+4004,Wirth,2020-09-24,8.4
+2002,Gosling,2020-10-08,
+1001,Hopper,,6.6
+3003,Kemeny,2020-11-12,
+4004,Wirth,2020-11-05,7.0
+1001,Hopper,2020-11-19,5.3
+5005,Kurtz,,
+)
+
+RightPV=: fixcsv noun define
+PATIENTID,LASTNAME,VISIT_DATE,SCORE
+2002,Gosling,2020-09-10,6.8
+1001,Hopper,2020-09-17,5.5
+4004,Wirth,2020-09-24,8.4
+2002,Gosling,2020-10-08,
+1001,Hopper,,6.6
+3003,Kemeny,2020-11-12,
+4004,Wirth,2020-11-05,7.0
+1001,Hopper,2020-11-19,5.3
+)
+
 AN=: 0 ". ];._2 noun define
 3  0.038 56
 8  0.335  6
@@ -108,15 +179,21 @@ Right_ANBN=: 0 ". ];._2 noun define
 4 0.691    96 0.001 33 672
 )
 
+sortTable=: {. , sort@}.
+
 test=: verb define
   assert. LeftAB -: left join A;<B
-  assert. RightAB -: right join A;<B
+  assert. RightAB -:&sortTable right join A;<B
   assert. InnerAB -: inner join A;<B
   assert. OuterAB -: outer join A;<B 
   assert. LeftBA -: left join B;<A
   assert. LeftABC -: 'Id' left join A;B;<C
-  assert. Inner_ANBN -: inner join1st AN;<BN
-  assert. Right_ANBN -: 0 right join1st AN;<BN
+  assert. LeftPV -: left join patients ;< visits
+  assert. InnerPV -: inner join patients ;< visits
+  assert. OuterPV -: outer join patients ;< visits
+  assert. RightPV -:&sortTable right join patients ;< visits
+  NB. assert. Inner_ANBN -: inner join1st AN;<BN
+  NB. assert. Right_ANBN -: 0 right join1st AN;<BN
   'All tests pass!'
 )
 
